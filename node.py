@@ -6,6 +6,7 @@ import torch
 import os
 from urllib.parse import urlparse
 import logging
+from torch.hub import download_url_to_file
 
 logger = logging.getLogger("Comfyui-Yolov8-JSON")
 yolov8_model_dir_name = "yolov8"
