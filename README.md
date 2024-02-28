@@ -1,6 +1,7 @@
 # Comfyui-Yolov8-JSON
 This node is mainly based on the Yolov8 model for object detection, and it outputs related images, masks, and JSON information.
-![image](https://github.com/Alysondao/Comfyui-Yolov8-JSON/blob/main/docs/image.png)
+
+![image](https://github.com/Alysondao/Comfyui-Yolov8-JSON/blob/main/docs/workflow.png)
 
 # README.md
 - en [English](README.md)
