@@ -4,8 +4,8 @@ This node is mainly based on the Yolov8 model for object detection, and it outpu
 ![image](https://github.com/Alysondao/Comfyui-Yolov8-JSON/blob/main/docs/workflow.png)
 
 # README.md
-- en [English](README.md)
-- zh_CN [简体中文](readme/README.zh_CN.md)
+- [English](README.md)
+- [简体中文](readme/README.zh_CN.md)
 
 # INSTALL
 If you need to display JSON formatted data or save it, you need to install the [Comfyui-Toolbox](https://github.com/zcfrank1st/Comfyui-Toolbox) node in advance.

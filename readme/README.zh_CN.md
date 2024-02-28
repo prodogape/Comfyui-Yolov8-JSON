@@ -4,8 +4,8 @@
 ![image](https://github.com/Alysondao/Comfyui-Yolov8-JSON/blob/main/docs/workflow.png)
 
 # README.md
-- en [English](README.md)
-- zh_CN [简体中文](readme/README.zh_CN.md)
+- [English](README.md)
+- [简体中文](readme/README.zh_CN.md)
 
 # 需要安装的依赖
 如果你需要显示JSON格式的数据，或者保存，你需要提前安装[Comfyui-Toolbox 节点](https://github.com/zcfrank1st/Comfyui-Toolbox)
