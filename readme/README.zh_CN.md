@@ -1,5 +1,6 @@
 # Comfyui-Yolov8-JSON
 本节点主要是基于yolov8模型，进行物体的检测，并且输出相关的图片、蒙版和JSON信息。
+![image](https://github.com/Alysondao/Comfyui-Yolov8-JSON/blob/main/docs/image.png)
 
 # README.md
 - en [English](README.md)
