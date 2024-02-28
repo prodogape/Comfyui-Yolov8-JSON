@@ -3,7 +3,7 @@
 
 ![image](https://github.com/Alysondao/Comfyui-Yolov8-JSON/blob/main/docs/workflow.png)
 
-# README.md
+# 切换语言
 - [English](README.md)
 - [简体中文](readme/README.zh_CN.md)
 
