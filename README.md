@@ -6,7 +6,7 @@ This node is mainly based on the Yolov8 model for object detection, and it outpu
 - en [English](README.md)
 - zh_CN [简体中文](readme/README.zh_CN.md)
 
-# install
+# INSTALL
 If you need to display JSON formatted data or save it, you need to install the [Comfyui-Toolbox](https://github.com/zcfrank1st/Comfyui-Toolbox) node in advance.
 
 This node calls the official Python package, and you also need to install the following dependencies:
@@ -15,7 +15,7 @@ This node calls the official Python package, and you also need to install the fo
 pip install ultralytics
 ```
 
-# model
+# MODEL
 This node supports automatic model downloads.
 You can manually download the models to the specified folder `models/yolov8` from [Yolov8](https://github.com/ultralytics/ultralytics) as shown below:
 
