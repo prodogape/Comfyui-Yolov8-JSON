@@ -7,6 +7,7 @@ import os
 from urllib.parse import urlparse
 import logging
 from torch.hub import download_url_to_file
+import cv2
 
 logger = logging.getLogger("Comfyui-Yolov8-JSON")
 yolov8_model_dir_name = "yolov8"
@@ -151,13 +152,6 @@ def get_yolov8_label_list():
 def list_yolov8_model():
     return list(yolov8_model_list.keys())
 
-
-def create_mask(image_shape, box):
-    mask = np.zeros(image_shape)
-    x1, y1, x2, y2 = box
-    mask[y1:y2, x1:x2] = 1
-    return mask
-
 def load_yolov8_model(model_name):
     yolov8_checkpoint_path = get_local_filepath(
         yolov8_model_list[model_name]["model_url"], yolov8_model_dir_name)
@@ -165,13 +159,12 @@ def load_yolov8_model(model_name):
     model = YOLO(yolov8_checkpoint_path)
     return model
 
-
-def yolov8_detect(model, image, lable_name, json_type, threshold):
+def yolov8_detect(model, image, label_name, json_type, threshold):
     image_tensor = image
     image_np = image_tensor.cpu().numpy()  # Change from CxHxW to HxWxC for Pillow
     image = Image.fromarray((image_np.squeeze(0) * 255).astype(np.uint8))  # Convert float [0,1] tensor to uint8 image
 
-    classes=get_classes(lable_name)
+    classes=get_classes(label_name)
     results = model(image, classes=classes, conf=threshold)
 
     im_array = results[0].plot()  # plot a BGR numpy array of predictions
@@ -180,10 +173,10 @@ def yolov8_detect(model, image, lable_name, json_type, threshold):
     image_tensor_out = torch.tensor(np.array(im).astype(np.float32) / 255.0)  # Convert back to CxHxW
     image_tensor_out = torch.unsqueeze(image_tensor_out, 0)
 
-    masks=[]
     yolov8_json=[]
-
+    res_mask = []
     for result in results:
+        print("result",result)
         labelme_data = {
             "version": "4.5.6",
             "flags": {},
@@ -193,8 +186,8 @@ def yolov8_detect(model, image, lable_name, json_type, threshold):
             "imageHeight": result.orig_shape[0],
             "imageWidth": result.orig_shape[1],
         }
+        mask =  np.zeros((result.orig_shape[0], result.orig_shape[1], 3), dtype=np.uint8)
         for box in result.boxes:
-
             x1, y1, x2, y2 = box.xyxy[0].tolist()
             label = labelName[int(box.cls)]
             points = [[x1, y1], [x2, y2]]
@@ -208,13 +201,11 @@ def yolov8_detect(model, image, lable_name, json_type, threshold):
             json = [label, x1, y1, x2, y2]
             yolov8_json.append(json)
             labelme_data["shapes"].append(shape)
-            mask = create_mask(
-                (result.orig_shape[0], result.orig_shape[1]),
-                [int(x1), int(y1), int(x2), int(y2)],
+            cv2.rectangle(
+                mask, (int(x1), int(y1)), (int(x2), int(y2)), (255, 255, 255), -1
             )
-            masks.append(torch.tensor(mask).unsqueeze(0))
-
-    res_mask = torch.cat(masks, dim=0)
+        mask_tensor = torch.from_numpy(mask).permute(2, 0, 1).float() / 255.0
+        res_mask.append(mask_tensor)
 
     if(json_type == 'Labelme'):
         json_data=labelme_data
@@ -248,7 +239,7 @@ class ApplyYolov8ModelOneLabel:
             "required": {
                 "yolov8_model": ("YOLOV8_MODEL", {}),
                 "image": ("IMAGE",),
-                "lable_name": (get_yolov8_label_list(),),
+                "label_name": (get_yolov8_label_list(),),
                 "json_type": (["Labelme", "yolov8"],),
                 "threshold": (
                     "FLOAT",
@@ -261,11 +252,22 @@ class ApplyYolov8ModelOneLabel:
     FUNCTION = "main"
     RETURN_TYPES = ("IMAGE", "JSON", "MASK")
 
-    def main(self, yolov8_model, image, lable_name, json_type, threshold):
-        image, json, masks = yolov8_detect(
-            yolov8_model, image, lable_name, json_type, threshold
-        )
-        return (image, json, masks)
+    def main(self, yolov8_model, image, label_name, json_type,threshold):
+        res_images = []
+        res_jsons = []
+        res_masks = []
+        for item in image:
+            # Check and adjust image dimensions if needed
+            if len(item.shape) == 3:
+                item = item.unsqueeze(0)  # Add a batch dimension if missing
+            image_out, json, masks = yolov8_detect(
+                yolov8_model, item, label_name, json_type, threshold
+            )
+            res_images.append(image_out)
+            res_jsons.extend(json)
+            res_masks.extend(masks)
+
+        return (torch.cat(res_images, dim=0), res_jsons, torch.cat(res_masks, dim=0))
 
 
 class ApplyYolov8Model:
@@ -275,7 +277,7 @@ class ApplyYolov8Model:
             "required": {
                 "yolov8_model": ("YOLOV8_MODEL", {}),
                 "image": ("IMAGE",),
-                "lable_name": (
+                "label_name": (
                     "STRING",
                     {"default": "person,cat,dog", "multiline": False},
                 ),
@@ -291,8 +293,19 @@ class ApplyYolov8Model:
     FUNCTION = "main"
     RETURN_TYPES = ("IMAGE", "JSON", "MASK")
 
-    def main(self, yolov8_model, image, lable_name, json_type,threshold):
-        image, json, masks = yolov8_detect(
-            yolov8_model, image, lable_name, json_type, threshold
-        )
-        return (image,json,masks)
+    def main(self, yolov8_model, image, label_name, json_type, threshold):
+        res_images = []
+        res_jsons = []
+        res_masks = []
+        for item in image:
+            # Check and adjust image dimensions if needed
+            if len(item.shape) == 3:
+                item = item.unsqueeze(0)  # Add a batch dimension if missing
+            image_out, json, masks = yolov8_detect(
+                yolov8_model, item, label_name, json_type, threshold
+            )
+            res_images.append(image_out)
+            res_jsons.extend(json)
+            res_masks.extend(masks)
+
+        return (torch.cat(res_images, dim=0), res_jsons, torch.cat(res_masks, dim=0))
