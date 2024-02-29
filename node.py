@@ -176,7 +176,6 @@ def yolov8_detect(model, image, label_name, json_type, threshold):
     yolov8_json=[]
     res_mask = []
     for result in results:
-        print("result",result)
         labelme_data = {
             "version": "4.5.6",
             "flags": {},
@@ -266,7 +265,6 @@ class ApplyYolov8ModelOneLabel:
             res_images.append(image_out)
             res_jsons.extend(json)
             res_masks.extend(masks)
-
         return (torch.cat(res_images, dim=0), res_jsons, torch.cat(res_masks, dim=0))
 
 
@@ -307,5 +305,4 @@ class ApplyYolov8Model:
             res_images.append(image_out)
             res_jsons.extend(json)
             res_masks.extend(masks)
-
         return (torch.cat(res_images, dim=0), res_jsons, torch.cat(res_masks, dim=0))

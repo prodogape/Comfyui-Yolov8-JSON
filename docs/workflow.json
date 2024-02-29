@@ -1,6 +1,6 @@
 {
-  "last_node_id": 11,
-  "last_link_id": 14,
+  "last_node_id": 12,
+  "last_link_id": 15,
   "nodes": [
     {
       "id": 5,
@@ -14,7 +14,7 @@
         403
       ],
       "flags": {},
-      "order": 5,
+      "order": 6,
       "mode": 0,
       "inputs": [
         {
@@ -28,29 +28,77 @@
       }
     },
     {
-      "id": 11,
-      "type": "PreviewImage",
+      "id": 8,
+      "type": "Load Yolov8 Model",
       "pos": [
-        1158,
-        -306
+        188,
+        43
       ],
       "size": {
-        "0": 337.3331604003906,
-        "1": 246
+        "0": 315,
+        "1": 58
       },
       "flags": {},
-      "order": 7,
+      "order": 0,
       "mode": 0,
-      "inputs": [
+      "outputs": [
         {
-          "name": "images",
-          "type": "IMAGE",
-          "link": 14
+          "name": "YOLOV8_MODEL",
+          "type": "YOLOV8_MODEL",
+          "links": [
+            7,
+            12
+          ],
+          "shape": 3,
+          "slot_index": 0
         }
       ],
       "properties": {
-        "Node name for S&R": "PreviewImage"
-      }
+        "Node name for S&R": "Load Yolov8 Model"
+      },
+      "widgets_values": [
+        "yolov8n(6.23MB)"
+      ]
+    },
+    {
+      "id": 3,
+      "type": "LoadImage",
+      "pos": [
+        160,
+        175
+      ],
+      "size": {
+        "0": 315,
+        "1": 314
+      },
+      "flags": {},
+      "order": 1,
+      "mode": 0,
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            8,
+            13
+          ],
+          "shape": 3,
+          "slot_index": 0
+        },
+        {
+          "name": "MASK",
+          "type": "MASK",
+          "links": null,
+          "shape": 3
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "LoadImage"
+      },
+      "widgets_values": [
+        "image (2).png",
+        "image"
+      ]
     },
     {
       "id": 4,
@@ -71,6 +119,132 @@
           "name": "images",
           "type": "IMAGE",
           "link": 11
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "PreviewImage"
+      }
+    },
+    {
+      "id": 9,
+      "type": "Apply Yolov8 Model",
+      "pos": [
+        648,
+        86
+      ],
+      "size": {
+        "0": 315,
+        "1": 146
+      },
+      "flags": {},
+      "order": 2,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "yolov8_model",
+          "type": "YOLOV8_MODEL",
+          "link": 7
+        },
+        {
+          "name": "image",
+          "type": "IMAGE",
+          "link": 8
+        }
+      ],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            11,
+            15
+          ],
+          "shape": 3,
+          "slot_index": 0
+        },
+        {
+          "name": "JSON",
+          "type": "JSON",
+          "links": [
+            10
+          ],
+          "shape": 3,
+          "slot_index": 1
+        },
+        {
+          "name": "MASK",
+          "type": "MASK",
+          "links": [
+            9
+          ],
+          "shape": 3,
+          "slot_index": 2
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "Apply Yolov8 Model"
+      },
+      "widgets_values": [
+        "person,cat,dog",
+        "yolov8",
+        0.25
+      ]
+    },
+    {
+      "id": 6,
+      "type": "MaskToImage",
+      "pos": [
+        544,
+        300
+      ],
+      "size": {
+        "0": 296.88226318359375,
+        "1": 41.210716247558594
+      },
+      "flags": {},
+      "order": 7,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "mask",
+          "type": "MASK",
+          "link": 9
+        }
+      ],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            6
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "MaskToImage"
+      }
+    },
+    {
+      "id": 7,
+      "type": "PreviewImage",
+      "pos": [
+        761,
+        402
+      ],
+      "size": {
+        "0": 336.35296630859375,
+        "1": 246
+      },
+      "flags": {},
+      "order": 9,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 6
         }
       ],
       "properties": {
@@ -136,83 +310,14 @@
       ]
     },
     {
-      "id": 8,
-      "type": "Load Yolov8 Model",
-      "pos": [
-        188,
-        43
-      ],
-      "size": {
-        "0": 315,
-        "1": 58
-      },
-      "flags": {},
-      "order": 0,
-      "mode": 0,
-      "outputs": [
-        {
-          "name": "YOLOV8_MODEL",
-          "type": "YOLOV8_MODEL",
-          "links": [
-            7,
-            12
-          ],
-          "shape": 3,
-          "slot_index": 0
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "Load Yolov8 Model"
-      },
-      "widgets_values": [
-        "yolov8n(6.23MB)"
-      ]
-    },
-    {
-      "id": 6,
-      "type": "MaskToImage",
-      "pos": [
-        629,
-        285
-      ],
-      "size": {
-        "0": 296.88226318359375,
-        "1": 41.210716247558594
-      },
-      "flags": {},
-      "order": 6,
-      "mode": 0,
-      "inputs": [
-        {
-          "name": "mask",
-          "type": "MASK",
-          "link": 9
-        }
-      ],
-      "outputs": [
-        {
-          "name": "IMAGE",
-          "type": "IMAGE",
-          "links": [
-            6
-          ],
-          "shape": 3,
-          "slot_index": 0
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "MaskToImage"
-      }
-    },
-    {
-      "id": 7,
+      "id": 11,
       "type": "PreviewImage",
       "pos": [
-        619,
-        391
+        1158,
+        -306
       ],
       "size": {
-        "0": 336.35296630859375,
+        "0": 337.3331604003906,
         "1": 246
       },
       "flags": {},
@@ -222,7 +327,7 @@
         {
           "name": "images",
           "type": "IMAGE",
-          "link": 6
+          "link": 14
         }
       ],
       "properties": {
@@ -230,107 +335,29 @@
       }
     },
     {
-      "id": 3,
-      "type": "LoadImage",
+      "id": 12,
+      "type": "SaveImage",
       "pos": [
-        160,
-        175
+        1661,
+        117
       ],
       "size": {
         "0": 315,
-        "1": 314
+        "1": 270
       },
       "flags": {},
-      "order": 1,
-      "mode": 0,
-      "outputs": [
-        {
-          "name": "IMAGE",
-          "type": "IMAGE",
-          "links": [
-            8,
-            13
-          ],
-          "shape": 3,
-          "slot_index": 0
-        },
-        {
-          "name": "MASK",
-          "type": "MASK",
-          "links": null,
-          "shape": 3
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "LoadImage"
-      },
-      "widgets_values": [
-        "image (2).png",
-        "image"
-      ]
-    },
-    {
-      "id": 9,
-      "type": "Apply Yolov8 Model",
-      "pos": [
-        634,
-        84
-      ],
-      "size": {
-        "0": 315,
-        "1": 146
-      },
-      "flags": {},
-      "order": 2,
+      "order": 5,
       "mode": 0,
       "inputs": [
         {
-          "name": "yolov8_model",
-          "type": "YOLOV8_MODEL",
-          "link": 7
-        },
-        {
-          "name": "image",
+          "name": "images",
           "type": "IMAGE",
-          "link": 8
+          "link": 15
         }
       ],
-      "outputs": [
-        {
-          "name": "IMAGE",
-          "type": "IMAGE",
-          "links": [
-            11
-          ],
-          "shape": 3,
-          "slot_index": 0
-        },
-        {
-          "name": "JSON",
-          "type": "JSON",
-          "links": [
-            10
-          ],
-          "shape": 3,
-          "slot_index": 1
-        },
-        {
-          "name": "MASK",
-          "type": "MASK",
-          "links": [
-            9
-          ],
-          "shape": 3,
-          "slot_index": 2
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "Apply Yolov8 Model"
-      },
+      "properties": {},
       "widgets_values": [
-        "person,cat,dog",
-        "yolov8",
-        0.25
+        "ComfyUI"
       ]
     }
   ],
@@ -404,6 +431,14 @@
       10,
       0,
       11,
+      0,
+      "IMAGE"
+    ],
+    [
+      15,
+      9,
+      0,
+      12,
       0,
       "IMAGE"
     ]
