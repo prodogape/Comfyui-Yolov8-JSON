@@ -149,6 +149,17 @@ def get_yolov8_label_list():
         result.append(value)
     return result
 
+
+def get_model_list():
+    input_dir = folder_paths.get_input_directory()
+    files = []
+    for f in os.listdir(input_dir):
+        if os.path.isfile(os.path.join(input_dir, f)):
+            file_parts = f.split('.')
+            if len(file_parts) > 1 and (file_parts[-1] == "pt"):
+                files.append(f)
+    return sorted(files)
+
 def list_yolov8_model():
     return list(yolov8_model_list.keys())
 
@@ -159,12 +170,44 @@ def load_yolov8_model(model_name):
     model = YOLO(yolov8_checkpoint_path)
     return model
 
+def load_yolov8_model_path(yolov8_checkpoint_path):
+    model_file_name = os.path.basename(yolov8_checkpoint_path)
+    model = YOLO(yolov8_checkpoint_path)
+    return model
+
+def is_url(url):
+    return url.split("://")[0] in ["http", "https"]
+
+def validate_path(path, allow_none=False, allow_url=True):
+    if path is None:
+        return allow_none
+    if is_url(path):
+        return True if allow_url else "URLs are unsupported for this path"
+    if not os.path.isfile(path.strip("\"")):
+        return "Invalid file path: {}".format(path)
+    if not path.endswith('.pt'):
+        return "Invalid file extension. Only .pt files are supported."
+    return True
+
+
+# modified from https://stackoverflow.com/questions/22058048/hashing-a-file-in-python
+def calculate_file_hash(filename: str, hash_every_n: int = 1):
+    # Larger video files were taking >.5 seconds to hash even when cached,
+    # so instead the modified time from the filesystem is used as a hash
+    h = hashlib.sha256()
+    h.update(filename.encode())
+    h.update(str(os.path.getmtime(filename)).encode())
+    return h.hexdigest()
+
 def yolov8_detect(model, image, label_name, json_type, threshold):
     image_tensor = image
     image_np = image_tensor.cpu().numpy()  # Change from CxHxW to HxWxC for Pillow
     image = Image.fromarray((image_np.squeeze(0) * 255).astype(np.uint8))  # Convert float [0,1] tensor to uint8 image
 
-    classes=get_classes(label_name)
+    if label_name is not None:
+        classes=get_classes(label_name)
+    else:
+        classes=[]
     results = model(image, classes=classes, conf=threshold)
 
     im_array = results[0].plot()  # plot a BGR numpy array of predictions
@@ -185,8 +228,10 @@ def yolov8_detect(model, image, label_name, json_type, threshold):
             "imageHeight": result.orig_shape[0],
             "imageWidth": result.orig_shape[1],
         }
-        mask =  np.zeros((result.orig_shape[0], result.orig_shape[1], 3), dtype=np.uint8)
         for box in result.boxes:
+            mask = np.zeros(
+                (result.orig_shape[0], result.orig_shape[1], 1), dtype=np.uint8
+            )
             x1, y1, x2, y2 = box.xyxy[0].tolist()
             label = labelName[int(box.cls)]
             points = [[x1, y1], [x2, y2]]
@@ -203,16 +248,15 @@ def yolov8_detect(model, image, label_name, json_type, threshold):
             cv2.rectangle(
                 mask, (int(x1), int(y1)), (int(x2), int(y2)), (255, 255, 255), -1
             )
-        mask_tensor = torch.from_numpy(mask).permute(2, 0, 1).float() / 255.0
-        res_mask.append(mask_tensor)
+            mask_tensor = torch.from_numpy(mask).permute(2, 0, 1).float() / 255.0
+            res_mask.append(mask_tensor)
 
     if(json_type == 'Labelme'):
-        json_data=labelme_data
+        json_data = labelme_data
     else:
-        json_data=yolov8_json
+        json_data = yolov8_json
 
     return (image_tensor_out, json_data, res_mask)
-
 
 class LoadYolov8Model:
     @classmethod
@@ -230,43 +274,33 @@ class LoadYolov8Model:
         model = load_yolov8_model(model_name)
         return (model,)
 
-
-class ApplyYolov8ModelOneLabel:
+class LoadYolov8ModelFromPath:
     @classmethod
     def INPUT_TYPES(cls):
         return {
             "required": {
-                "yolov8_model": ("YOLOV8_MODEL", {}),
-                "image": ("IMAGE",),
-                "label_name": (get_yolov8_label_list(),),
-                "json_type": (["Labelme", "yolov8"],),
-                "threshold": (
-                    "FLOAT",
-                    {"default": 0.25, "min": 0.01, "max": 1.0, "step": 0.01},
+                "model_path": (
+                    "STRING",
+                    {"default": "/ComfyUI/models/yolov8/yolov8l.pt",}
                 ),
             },
         }
 
     CATEGORY = "Comfyui-Yolov8-JSON"
     FUNCTION = "main"
-    RETURN_TYPES = ("IMAGE", "JSON", "MASK")
+    RETURN_TYPES = ("YOLOV8_MODEL",)
 
-    def main(self, yolov8_model, image, label_name, json_type,threshold):
-        res_images = []
-        res_jsons = []
-        res_masks = []
-        for item in image:
-            # Check and adjust image dimensions if needed
-            if len(item.shape) == 3:
-                item = item.unsqueeze(0)  # Add a batch dimension if missing
-            image_out, json, masks = yolov8_detect(
-                yolov8_model, item, label_name, json_type, threshold
-            )
-            res_images.append(image_out)
-            res_jsons.extend(json)
-            res_masks.extend(masks)
-        return (torch.cat(res_images, dim=0), res_jsons, torch.cat(res_masks, dim=0))
+    def main(self, model_path):
+        model_path = folder_paths.get_annotated_filepath(model_path.strip('"'))
+        if model_path is None or validate_path(model_path) != True:
+            raise Exception("model is not a valid path: " + model_path)
+        model = load_yolov8_model_path(model_path)
+        return (model,)
 
+    @classmethod
+    def IS_CHANGED(s, model_path):
+        model_path = folder_paths.get_annotated_filepath(model_path)
+        return calculate_file_hash(model_path)
 
 class ApplyYolov8Model:
     @classmethod
@@ -275,11 +309,22 @@ class ApplyYolov8Model:
             "required": {
                 "yolov8_model": ("YOLOV8_MODEL", {}),
                 "image": ("IMAGE",),
+                "detect": (
+                    ["all", "choose", "input"],
+                    {"default": "all"},
+                ),
                 "label_name": (
                     "STRING",
                     {"default": "person,cat,dog", "multiline": False},
                 ),
-                "json_type": (["Labelme", "yolov8"],),
+                "label_list": (
+                    get_yolov8_label_list(),
+                    {"default": "person"},
+                ),
+                "json_type": (
+                    ["Labelme", "yolov8"],
+                    {"default": "Labelme"},
+                ),
                 "threshold": (
                     "FLOAT",
                     {"default": 0.25, "min": 0.01, "max": 1.0, "step": 0.01},
@@ -291,7 +336,7 @@ class ApplyYolov8Model:
     FUNCTION = "main"
     RETURN_TYPES = ("IMAGE", "JSON", "MASK")
 
-    def main(self, yolov8_model, image, label_name, json_type, threshold):
+    def main(self, yolov8_model, image, detect , label_name,label_list,json_type, threshold):
         res_images = []
         res_jsons = []
         res_masks = []
@@ -299,8 +344,15 @@ class ApplyYolov8Model:
             # Check and adjust image dimensions if needed
             if len(item.shape) == 3:
                 item = item.unsqueeze(0)  # Add a batch dimension if missing
+
+            label=None
+            if(detect == "choose"):
+                label=label_list
+            else:
+                label=label_name
+
             image_out, json, masks = yolov8_detect(
-                yolov8_model, item, label_name, json_type, threshold
+                yolov8_model, item, label, json_type, threshold
             )
             res_images.append(image_out)
             res_jsons.extend(json)

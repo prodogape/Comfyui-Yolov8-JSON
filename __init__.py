@@ -3,8 +3,15 @@ from .install import *
 
 NODE_CLASS_MAPPINGS = {
     "Load Yolov8 Model": LoadYolov8Model,
-    "Apply Yolov8 Model One Label": ApplyYolov8ModelOneLabel,
+    "Load Yolov8 Model From Path": LoadYolov8ModelFromPath,
     "Apply Yolov8 Model": ApplyYolov8Model,
 }
+NODE_DISPLAY_NAME_MAPPINGS = {
+    "Load Yolov8 Model": "Load Yolov8 Model",
+    "Load Yolov8 Model Upload": "Load Yolov8 Model From Path",
+    "Apply Yolov8 Model": "Apply Yolov8 Model",
+}
 
-__all__ = ["NODE_CLASS_MAPPINGS"]
+WEB_DIRECTORY = "./web"
+
+__all__ = ["NODE_CLASS_MAPPINGS", "NODE_DISPLAY_NAME_MAPPINGS" ,"WEB_DIRECTORY"]
