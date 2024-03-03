@@ -189,7 +189,6 @@ def validate_path(path, allow_none=False, allow_url=True):
         return "Invalid file extension. Only .pt files are supported."
     return True
 
-
 # modified from https://stackoverflow.com/questions/22058048/hashing-a-file-in-python
 def calculate_file_hash(filename: str, hash_every_n: int = 1):
     # Larger video files were taking >.5 seconds to hash even when cached,
