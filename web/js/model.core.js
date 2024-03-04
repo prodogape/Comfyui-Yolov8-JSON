@@ -150,6 +150,9 @@ app.registerExtension({
         if (nodeData ?.name == "Apply Yolov8 Model") {
             addCustomLabel(nodeType, nodeData, "detect")
         }
+        if (nodeData ?.name == "Apply Yolov8 Model Seg") {
+            addCustomLabel(nodeType, nodeData, "detect")
+        }
         // else if (nodeData ?.name == "Load Yolov8 Model Upload") {
         //     addUploadWidget(nodeType, nodeData, "model");
         //     chainCallback(nodeType.prototype, "onNodeCreated", function () {

@@ -27,6 +27,21 @@ yolov8_model_list = {
     "yolov8x (130.53)": {
         "model_url": "https://github.com/ultralytics/assets/releases/download/v8.1.0/yolov8x.pt",
     },
+    "yolov8n-seg (6.73MB)": {
+        "model_url": "https://github.com/ultralytics/assets/releases/download/v8.1.0/yolov8n-seg.pt",
+    },
+    "yolov8s-seg(22.79MB)": {
+        "model_url": "https://github.com/ultralytics/assets/releases/download/v8.1.0/yolov8s-seg.pt",
+    },
+    "yolov8m-seg  (52.36MB)": {
+        "model_url": "https://github.com/ultralytics/assets/releases/download/v8.1.0/yolov8m-seg.pt",
+    },
+    "yolov8l-seg  (88.11MB)": {
+        "model_url": "https://github.com/ultralytics/assets/releases/download/v8.1.0/yolov8l-seg.pt",
+    },
+    "yolov8x-seg  (137.40)": {
+        "model_url": "https://github.com/ultralytics/assets/releases/download/v8.1.0/yolov8x-seg.pt",
+    },
 }
 
 labelName = {
@@ -198,24 +213,61 @@ def calculate_file_hash(filename: str, hash_every_n: int = 1):
     h.update(str(os.path.getmtime(filename)).encode())
     return h.hexdigest()
 
-def yolov8_detect(model, image, label_name, json_type, threshold):
+def yolov8_segment(model, image, label_name, threshold):
     image_tensor = image
     image_np = image_tensor.cpu().numpy()  # Change from CxHxW to HxWxC for Pillow
-    image = Image.fromarray((image_np.squeeze(0) * 255).astype(np.uint8))  # Convert float [0,1] tensor to uint8 image
+    image = Image.fromarray(
+        (image_np.squeeze(0) * 255).astype(np.uint8)
+    )  # Convert float [0,1] tensor to uint8 image
 
     if label_name is not None:
-        classes=get_classes(label_name)
+        classes = get_classes(label_name)
     else:
-        classes=[]
+        classes = []
     results = model(image, classes=classes, conf=threshold)
 
     im_array = results[0].plot()  # plot a BGR numpy array of predictions
-    im = Image.fromarray(im_array[...,::-1])  # RGB PIL image
+    im = Image.fromarray(im_array[..., ::-1])  # RGB PIL image
 
-    image_tensor_out = torch.tensor(np.array(im).astype(np.float32) / 255.0)  # Convert back to CxHxW
+    image_tensor_out = torch.tensor(
+        np.array(im).astype(np.float32) / 255.0
+    )  # Convert back to CxHxW
     image_tensor_out = torch.unsqueeze(image_tensor_out, 0)
 
-    yolov8_json=[]
+    res_mask = []
+    masks = results[0].masks.data
+    boxes = results[0].boxes.data
+    clss = boxes[:, 5]
+
+    for class_id in classes:
+        mask = masks[torch.where(clss == class_id)]
+        mask_tensor = torch.any(mask, dim=0).int() * 255
+        res_mask.append(mask_tensor)
+
+    return (image_tensor_out, res_mask)
+
+def yolov8_detect(model, image, label_name, json_type, threshold):
+    image_tensor = image
+    image_np = image_tensor.cpu().numpy()  # Change from CxHxW to HxWxC for Pillow
+    image = Image.fromarray(
+        (image_np.squeeze(0) * 255).astype(np.uint8)
+    )  # Convert float [0,1] tensor to uint8 image
+
+    if label_name is not None:
+        classes = get_classes(label_name)
+    else:
+        classes = []
+    results = model(image, classes=classes, conf=threshold)
+
+    im_array = results[0].plot()  # plot a BGR numpy array of predictions
+    im = Image.fromarray(im_array[..., ::-1])  # RGB PIL image
+
+    image_tensor_out = torch.tensor(
+        np.array(im).astype(np.float32) / 255.0
+    )  # Convert back to CxHxW
+    image_tensor_out = torch.unsqueeze(image_tensor_out, 0)
+
+    yolov8_json = []
     res_mask = []
     for result in results:
         labelme_data = {
@@ -248,12 +300,13 @@ def yolov8_detect(model, image, label_name, json_type, threshold):
         mask_tensor = torch.from_numpy(mask).permute(2, 0, 1).float() / 255.0
         res_mask.append(mask_tensor)
 
-    if(json_type == 'Labelme'):
+    if json_type == "Labelme":
         json_data = labelme_data
     else:
         json_data = yolov8_json
 
     return (image_tensor_out, json_data, res_mask)
+
 
 class LoadYolov8Model:
     @classmethod
@@ -355,3 +408,55 @@ class ApplyYolov8Model:
             res_jsons.extend(json)
             res_masks.extend(masks)
         return (torch.cat(res_images, dim=0), res_jsons, torch.cat(res_masks, dim=0))
+
+
+class ApplyYolov8ModelSeg:
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "yolov8_model": ("YOLOV8_MODEL", {}),
+                "image": ("IMAGE",),
+                "detect": (
+                    ["all", "choose", "input"],
+                    {"default": "all"},
+                ),
+                "label_name": (
+                    "STRING",
+                    {"default": "person,cat,dog", "multiline": False},
+                ),
+                "label_list": (
+                    get_yolov8_label_list(),
+                    {"default": "person"},
+                ),
+                "threshold": (
+                    "FLOAT",
+                    {"default": 0.25, "min": 0.01, "max": 1.0, "step": 0.01},
+                ),
+            },
+        }
+
+    CATEGORY = "Comfyui-Yolov8-JSON"
+    FUNCTION = "main"
+    RETURN_TYPES = ("IMAGE", "MASK")
+
+    def main(
+        self, yolov8_model, image, detect, label_name, label_list, threshold
+    ):
+        res_images = []
+        res_masks = []
+        for item in image:
+            # Check and adjust image dimensions if needed
+            if len(item.shape) == 3:
+                item = item.unsqueeze(0)  # Add a batch dimension if missing
+
+            label = None
+            if detect == "choose":
+                label = label_list
+            else:
+                label = label_name
+
+            image_out,  masks = yolov8_segment(yolov8_model, item, label, threshold)
+            res_images.append(image_out)
+            res_masks.extend(masks)
+        return (torch.cat(res_images, dim=0), torch.cat(res_masks, dim=0))
