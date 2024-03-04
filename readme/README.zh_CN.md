@@ -39,4 +39,9 @@ ComfyUI
             yolov8n.pt
             yolov8m.pt
             yolov8x.pt
+            yolov8l-seg.pt
+            yolov8s-seg.pt
+            yolov8n-seg.pt
+            yolov8m-seg.pt
+            yolov8x-seg.pt
 ```
