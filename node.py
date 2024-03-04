@@ -234,15 +234,9 @@ def yolov8_segment(model, image, label_name, threshold):
     )  # Convert back to CxHxW
     image_tensor_out = torch.unsqueeze(image_tensor_out, 0)
 
-    res_mask = []
+    res_mask=[]
     masks = results[0].masks.data
-    boxes = results[0].boxes.data
-    clss = boxes[:, 5]
-
-    for class_id in classes:
-        mask = masks[torch.where(clss == class_id)]
-        mask_tensor = torch.any(mask, dim=0).int() * 255
-        res_mask.append(mask_tensor)
+    res_mask.append(torch.sum(masks, dim=0))
 
     return (image_tensor_out, res_mask)
 
