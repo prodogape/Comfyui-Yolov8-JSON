@@ -1,6 +1,6 @@
 {
   "last_node_id": 14,
-  "last_link_id": 14,
+  "last_link_id": 15,
   "nodes": [
     {
       "id": 3,
@@ -40,31 +40,6 @@
         "image (2).png",
         "image"
       ]
-    },
-    {
-      "id": 4,
-      "type": "PreviewImage",
-      "pos": [
-        1885,
-        -437
-      ],
-      "size": {
-        "0": 297.05706787109375,
-        "1": 246
-      },
-      "flags": {},
-      "order": 3,
-      "mode": 0,
-      "inputs": [
-        {
-          "name": "images",
-          "type": "IMAGE",
-          "link": 3
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "PreviewImage"
-      }
     },
     {
       "id": 2,
@@ -160,31 +135,6 @@
       }
     },
     {
-      "id": 14,
-      "type": "PreviewJson",
-      "pos": [
-        1892,
-        -129
-      ],
-      "size": [
-        286.49059947638125,
-        398.39419161720093
-      ],
-      "flags": {},
-      "order": 4,
-      "mode": 0,
-      "inputs": [
-        {
-          "name": "json_content",
-          "type": "JSON",
-          "link": 14
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "PreviewJson"
-      }
-    },
-    {
       "id": 1,
       "type": "Apply Yolov8 Model",
       "pos": [
@@ -216,7 +166,7 @@
           "name": "IMAGE",
           "type": "IMAGE",
           "links": [
-            3
+            15
           ],
           "shape": 3,
           "slot_index": 0
@@ -225,7 +175,7 @@
           "name": "JSON",
           "type": "JSON",
           "links": [
-            14
+            13
           ],
           "shape": 3,
           "slot_index": 1
@@ -250,6 +200,56 @@
         "yolov8",
         0.25
       ]
+    },
+    {
+      "id": 4,
+      "type": "PreviewImage",
+      "pos": [
+        1885,
+        -437
+      ],
+      "size": {
+        "0": 297.05706787109375,
+        "1": 246
+      },
+      "flags": {},
+      "order": 3,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 15
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "PreviewImage"
+      }
+    },
+    {
+      "id": 13,
+      "type": "PreviewJson",
+      "pos": [
+        1891,
+        -131
+      ],
+      "size": [
+        278.303466796875,
+        403
+      ],
+      "flags": {},
+      "order": 4,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "json_content",
+          "type": "JSON",
+          "link": 13
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "PreviewJson"
+      }
     }
   ],
   "links": [
@@ -259,14 +259,6 @@
       0,
       1,
       1,
-      "IMAGE"
-    ],
-    [
-      3,
-      1,
-      0,
-      4,
-      0,
       "IMAGE"
     ],
     [
@@ -294,12 +286,20 @@
       "YOLOV8_MODEL"
     ],
     [
-      14,
+      13,
       1,
       1,
-      14,
+      13,
       0,
       "JSON"
+    ],
+    [
+      15,
+      1,
+      0,
+      4,
+      0,
+      "IMAGE"
     ]
   ],
   "groups": [],
