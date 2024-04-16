@@ -274,8 +274,8 @@ def yolov8_detect(model, image, label_name, json_type, threshold):
             "imageHeight": result.orig_shape[0],
             "imageWidth": result.orig_shape[1],
         }
-        mask = np.zeros((result.orig_shape[0], result.orig_shape[1], 1), dtype=np.uint8)
         for box in result.boxes:
+            mask = np.zeros((result.orig_shape[0], result.orig_shape[1], 1), dtype=np.uint8)
             x1, y1, x2, y2 = box.xyxy[0].tolist()
             label = labelName[int(box.cls)]
             points = [[x1, y1], [x2, y2]]
@@ -292,8 +292,8 @@ def yolov8_detect(model, image, label_name, json_type, threshold):
             cv2.rectangle(
                 mask, (int(x1), int(y1)), (int(x2), int(y2)), (255, 255, 255), -1
             )
-        mask_tensor = torch.from_numpy(mask).permute(2, 0, 1).float() / 255.0
-        res_mask.append(mask_tensor)
+            mask_tensor = torch.from_numpy(mask).permute(2, 0, 1).float() / 255.0
+            res_mask.append(mask_tensor)
 
     if json_type == "Labelme":
         json_data = labelme_data
