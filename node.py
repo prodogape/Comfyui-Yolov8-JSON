@@ -8,6 +8,7 @@ from urllib.parse import urlparse
 import logging
 from torch.hub import download_url_to_file
 import cv2
+import json
 
 logger = logging.getLogger("Comfyui-Yolov8-JSON")
 yolov8_model_dir_name = "yolov8"
@@ -400,7 +401,7 @@ class ApplyYolov8Model:
                 yolov8_model, item, label, json_type, threshold
             )
             res_images.append(image_out)
-            res_jsons.extend(json)
+            res_jsons.append(json)
             res_masks.extend(masks)
         return (torch.cat(res_images, dim=0), res_jsons, torch.cat(res_masks, dim=0))
 
@@ -455,3 +456,64 @@ class ApplyYolov8ModelSeg:
             res_images.append(image_out)
             res_masks.extend(masks)
         return (torch.cat(res_images, dim=0), torch.cat(res_masks, dim=0))
+
+
+class SaveLabelmeJson:
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "image": ("IMAGE", {}),
+                "labelme_json": ("JSON", {}),
+                "folder_name": (
+                    "STRING",
+                    {"default": "GroundingDino", "multiline": False},
+                ),
+                "filename_prefix": (
+                    "STRING",
+                    {"default": "GroundingDino", "multiline": False},
+                ),
+            }
+        }
+
+    CATEGORY = "Comfyui-Yolov8-JSON"
+    FUNCTION = "main"
+    RETURN_TYPES = ("STRING",)
+
+    def main(self, image, labelme_json, folder_name, filename_prefix):
+
+        if len(labelme_json) != len(image):
+            return '0'
+
+        array_length = len(labelme_json)
+        num_digits = len(str(array_length))
+        count = 0
+
+        # get outpu folder
+        folder = folder_paths.output_directory
+        output_dir = os.path.join(folder, folder_name)
+
+        if not os.path.exists(output_dir):
+            os.makedirs(output_dir)
+
+        for item, label in zip(image, labelme_json):
+            image_pil = Image.fromarray(
+                np.clip(255.0 * item.cpu().numpy(), 0, 255).astype(np.uint8)
+            ).convert("RGB")
+
+            count_str = f"{count:0{num_digits}d}"
+            file_name = filename_prefix + "_" + count_str
+
+            # save_image
+            image_path = os.path.join(output_dir, file_name + ".jpg")
+            image_pil.save(image_path)
+
+            # save_json
+            label["imagePath"] = file_name + ".jpg"
+            json_path = os.path.join(output_dir, file_name + ".json")
+            with open(json_path, "w") as json_file:
+                json.dump(label, json_file, indent=4)
+
+            count += 1
+
+        return str(count)
