@@ -517,3 +517,168 @@ class SaveLabelmeJson:
             count += 1
 
         return str(count)
+
+
+def checkLabel(label, show_prompt):
+    label = label.lower().split("(")[0]
+    labels = show_prompt.split(",")
+    for l in labels:
+        new_label = l.lower()
+        if label == new_label:
+            return True
+    return False
+
+
+def parse_json_string(json_string):
+    try:
+        return json.loads(json_string)
+    except json.JSONDecodeError as e:
+        print(f"{json_string} decode error: {e}")
+        return None
+
+
+def plot_boxes_to_image(image_pil, labelme_json, show_prompt, event_prompt,prompt_name ):
+    image_np = np.array(image_pil)
+
+    H = labelme_json["imageHeight"]
+    W = labelme_json["imageWidth"]
+    shapes = labelme_json["shapes"]
+    prompt_list = parse_json_string(prompt_name)
+
+    res_mask = []
+    res_image = []
+
+    font_scale = 1
+    box_color = (255, 0, 0)
+    text_color = (255, 255, 255)
+    image_np = image_np[..., :3]
+
+    # Make a copy of the image to avoid modifying the original image
+    image_with_boxes = np.copy(image_np)
+
+    for shape in shapes:
+
+        label = shape["label"]
+        points = shape["points"]
+        [x1, y1], [x2, y2] = points
+
+        # if lable is not in show,do not draw the label
+        if show_prompt != "all" and show_prompt != "":
+            if checkLabel(label, show_prompt) == False:
+                continue
+
+        # if lable is event ,color is red ,else color is green
+        if event_prompt != "all" and event_prompt != "":
+            if checkLabel(label, event_prompt):
+                box_color = (255, 0, 0)
+                text_color = (255, 255, 255)
+            else:
+                box_color = (0, 255, 0)
+                text_color = (255, 255, 255)
+
+        # change lable
+        if prompt_list is not None and label in prompt_list:
+            label = prompt_list[label]
+
+        # Draw rectangle on the copied image
+        cv2.rectangle(image_with_boxes, (int(x1), int(y1)), (int(x2), int(y2)), box_color, 3)
+
+        # Draw label on the copied image
+        label_size = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, font_scale, 2)[0]
+        label_ymin = max(y1, label_size[1] + 10)
+        cv2.rectangle(
+            image_with_boxes,
+            (x1, y1 - label_size[1] - 10),
+            (x1 + label_size[0], y1),
+            box_color,
+            -1,
+        )
+        cv2.putText(
+            image_with_boxes,
+            label,
+            (x1, y1 - 7),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            font_scale,
+            text_color,
+            2,
+            cv2.LINE_AA,
+            bottomLeftOrigin=False,
+        )
+
+        # Draw mask
+        mask = np.zeros((H, W, 1), dtype=np.uint8)
+        cv2.rectangle(mask, (int(x1), int(y1)), (int(x2), int(y2)), (255, 255, 255), -1)
+        mask_tensor = torch.from_numpy(mask).permute(2, 0, 1).float() / 255.0
+        res_mask.append(mask_tensor)
+
+    if len(res_mask) == 0:
+        mask = np.zeros((H, W, 1), dtype=np.uint8)
+        mask_tensor = torch.from_numpy(mask).permute(2, 0, 1).float() / 255.0
+        res_mask.append(mask_tensor)
+
+    # Convert the modified image to a torch tensor
+    image_with_boxes_tensor = torch.from_numpy(
+        image_with_boxes.astype(np.float32) / 255.0
+    )
+    image_with_boxes_tensor = torch.unsqueeze(image_with_boxes_tensor, 0)
+    res_image.append(image_with_boxes_tensor)
+
+    return res_image, res_mask
+
+class DrawLabelmeJson:
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "image": ("IMAGE", {}),
+                "labelme_json": ("JSON", {}),
+                "show_prompt": (
+                    "STRING",
+                    {"default": "all", "multiline": False},
+                ),
+                "event_prompt": (
+                    "STRING",
+                    {"default": "all", "multiline": False},
+                ),
+                "prompt_name": (
+                    "STRING",
+                    {
+                        "default": '{"head":"no helmet","helmet":"helmet"}',
+                        "multiline": False,
+                    },
+                ),
+            }
+        }
+
+    CATEGORY = "Comfyui-Yolov8-JSON"
+    FUNCTION = "main"
+    RETURN_TYPES = ("IMAGE","MASK",)
+
+    def main(
+        self,
+        image,
+        labelme_json,
+        show_prompt,
+        event_prompt,
+        prompt_name,
+    ):
+
+        res_images = []
+        res_masks = []
+
+        for item, labelme in zip(image, labelme_json):
+            image_pil = Image.fromarray(np.clip(255.0 * item.cpu().numpy(), 0, 255).astype(np.uint8)).convert("RGB")
+            image_tensor, mask_tensor = plot_boxes_to_image(
+                image_pil, labelme, show_prompt, event_prompt, prompt_name
+            )
+            res_images.extend(image_tensor)
+            res_masks.extend(mask_tensor)
+            
+            if len(res_images) == 0:
+                res_images.extend(item)
+            if len(res_masks) == 0:
+                mask = np.zeros((height, width, 1), dtype=np.uint8)
+                empty_mask = torch.from_numpy(mask).permute(2, 0, 1).float() / 255.0
+                res_masks.extend(empty_mask)
+
+        return ( torch.cat(res_images, dim=0),torch.cat(res_masks, dim=0),)

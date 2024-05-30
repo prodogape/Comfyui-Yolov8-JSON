@@ -7,6 +7,7 @@ NODE_CLASS_MAPPINGS = {
     "Apply Yolov8 Model": ApplyYolov8Model,
     "Apply Yolov8 Model Seg": ApplyYolov8ModelSeg,
     "Save Labelme Json": SaveLabelmeJson,
+    "Draw Labelme Json": DrawLabelmeJson,
 }
 NODE_DISPLAY_NAME_MAPPINGS = {
     "Load Yolov8 Model": "Load Yolov8 Model",
@@ -14,6 +15,7 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "Apply Yolov8 Model": "Apply Yolov8 Model Detect",
     "Apply Yolov8 Model Seg": "Apply Yolov8 Model Seg",
     "Save Labelme Json": "Save Labelme Json",
+    "Draw Labelme Json": "Draw Labelme Json",
 }
 
 WEB_DIRECTORY = "./web"
