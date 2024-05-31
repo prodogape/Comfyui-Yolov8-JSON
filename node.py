@@ -1,5 +1,5 @@
 import folder_paths
-from PIL import Image
+from PIL import Image, ImageDraw, ImageFont
 import numpy as np
 from ultralytics import YOLO
 import torch
@@ -537,9 +537,7 @@ def parse_json_string(json_string):
         return None
 
 
-def plot_boxes_to_image(image_pil, labelme_json, show_prompt, event_prompt,prompt_name ):
-    image_np = np.array(image_pil)
-
+def plot_boxes_to_image(image_pil, labelme_json, show_prompt, event_prompt,prompt_name):
     H = labelme_json["imageHeight"]
     W = labelme_json["imageWidth"]
     shapes = labelme_json["shapes"]
@@ -551,10 +549,15 @@ def plot_boxes_to_image(image_pil, labelme_json, show_prompt, event_prompt,promp
     font_scale = 1
     box_color = (255, 0, 0)
     text_color = (255, 255, 255)
-    image_np = image_np[..., :3]
 
-    # Make a copy of the image to avoid modifying the original image
-    image_with_boxes = np.copy(image_np)
+    # Convert the image to a PIL image for drawing text
+    draw = ImageDraw.Draw(image_pil)
+
+    # Load a TTF font file for drawing Chinese text
+    current_file_path = os.path.dirname(os.path.abspath(__file__))
+    font_path = os.path.join(current_file_path, "docs", "PingFangRegular.ttf") 
+    font_size = 20
+    font = ImageFont.truetype(font_path, font_size)
 
     labelme_data = {
         "version": "4.5.6",
@@ -596,29 +599,13 @@ def plot_boxes_to_image(image_pil, labelme_json, show_prompt, event_prompt,promp
         labelme_data["shapes"].append(shape)
 
         # Draw rectangle on the copied image
-        cv2.rectangle(image_with_boxes, (int(x1), int(y1)), (int(x2), int(y2)), box_color, 3)
+        draw.rectangle([(x1, y1), (x2, y2)], outline=box_color, width=3)
 
-        # Draw label on the copied image
-        label_size = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, font_scale, 2)[0]
-        label_ymin = max(y1, label_size[1] + 10)
-        cv2.rectangle(
-            image_with_boxes,
-            (x1, y1 - label_size[1] - 10),
-            (x1 + label_size[0], y1),
-            box_color,
-            -1,
-        )
-        cv2.putText(
-            image_with_boxes,
-            label,
-            (x1, y1 - 7),
-            cv2.FONT_HERSHEY_SIMPLEX,
-            font_scale,
-            text_color,
-            2,
-            cv2.LINE_AA,
-            bottomLeftOrigin=False,
-        )
+        # Draw label on the copied image using PIL
+        text_size = draw.textsize(label, font=font)
+        label_ymin = max(y1, text_size[1] + 10)
+        draw.rectangle([(x1, y1 - text_size[1] - 10), (x1 + text_size[0], y1)], fill=box_color)
+        draw.text((x1, y1 - text_size[1] - 10), label, font=font, fill=text_color)
 
         # Draw mask
         mask = np.zeros((H, W, 1), dtype=np.uint8)
@@ -632,9 +619,9 @@ def plot_boxes_to_image(image_pil, labelme_json, show_prompt, event_prompt,promp
         res_mask.append(mask_tensor)
 
     # Convert the modified image to a torch tensor
-    image_with_boxes_tensor = torch.from_numpy(
-        image_with_boxes.astype(np.float32) / 255.0
-    )
+    image_with_boxes = np.array(image_pil)
+    
+    image_with_boxes_tensor = torch.from_numpy(image_with_boxes.astype(np.float32) / 255.0)
     image_with_boxes_tensor = torch.unsqueeze(image_with_boxes_tensor, 0)
     res_image.append(image_with_boxes_tensor)
 
