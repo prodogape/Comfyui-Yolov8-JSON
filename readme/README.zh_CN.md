@@ -15,7 +15,8 @@
 |Load Yolov8 Model From Path  |从指定地址读取模型                 |
 |Apply Yolov8 Model           |yolov8检测模型推理                 |
 |Apply Yolov8 Model Seg       |yolov8分割模型推理                 |
-
+|Save Labelme Json            |将原图和对应的Labeme JSON格式文件保存到output里，支持自定义目录 |
+|Draw Labelme Json            |基于labelJSon,在图片基础上绘制识别框并输出mask，支持指定显示的标签和变色，还有更改标签名称|
 # 需要安装的依赖
 如果你需要显示JSON格式的数据，或者保存，你需要提前安装[Comfyui-Toolbox 节点](https://github.com/zcfrank1st/Comfyui-Toolbox)
 

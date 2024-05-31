@@ -15,6 +15,8 @@ This node is mainly based on the Yolov8 model for object detection, and it outpu
 |Load Yolov8 Model From Path  |Load the model from the specified path                          |
 |Apply Yolov8 Model           |Apply Yolov8 detection model                                    |
 |Apply Yolov8 Model Seg       |Apply Yolov8 segmentation model                                 |
+|Save Labelme Json            |Save the original image and the corresponding Labelme JSON format file to the output directory, with support for custom directories |
+|Draw Labelme Json            |Based on the Labelme JSON, draw recognition boxes on the image and output masks, with support for specifying the labels to display, changing colors, and renaming labels |
 
 # INSTALL
 If you need to display JSON formatted data or save it, you need to install the [Comfyui-Toolbox](https://github.com/zcfrank1st/Comfyui-Toolbox) node in advance.
