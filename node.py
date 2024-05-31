@@ -556,6 +556,16 @@ def plot_boxes_to_image(image_pil, labelme_json, show_prompt, event_prompt,promp
     # Make a copy of the image to avoid modifying the original image
     image_with_boxes = np.copy(image_np)
 
+    labelme_data = {
+        "version": "4.5.6",
+        "flags": {},
+        "shapes": [],
+        "imagePath": None,
+        "imageData": None,
+        "imageHeight": H,
+        "imageWidth": W,
+    }
+
     for shape in shapes:
 
         label = shape["label"]
@@ -579,9 +589,11 @@ def plot_boxes_to_image(image_pil, labelme_json, show_prompt, event_prompt,promp
         # change lable
         if prompt_list is not None and label in prompt_list:
             label = prompt_list[label]
-            
+
         if "threshold" in shape:
             label = label + ":" + shape["threshold"]
+
+        labelme_data["shapes"].append(shape)
 
         # Draw rectangle on the copied image
         cv2.rectangle(image_with_boxes, (int(x1), int(y1)), (int(x2), int(y2)), box_color, 3)
@@ -626,7 +638,7 @@ def plot_boxes_to_image(image_pil, labelme_json, show_prompt, event_prompt,promp
     image_with_boxes_tensor = torch.unsqueeze(image_with_boxes_tensor, 0)
     res_image.append(image_with_boxes_tensor)
 
-    return res_image, res_mask
+    return res_image, res_mask, labelme_data
 
 class DrawLabelmeJson:
     @classmethod
@@ -655,7 +667,11 @@ class DrawLabelmeJson:
 
     CATEGORY = "Comfyui-Yolov8-JSON"
     FUNCTION = "main"
-    RETURN_TYPES = ("IMAGE","MASK",)
+    RETURN_TYPES = (
+        "IMAGE",
+        "MASK",
+        "JSON",
+    )
 
     def main(
         self,
@@ -668,15 +684,17 @@ class DrawLabelmeJson:
 
         res_images = []
         res_masks = []
+        res_labels = []
 
         for item, labelme in zip(image, labelme_json):
             image_pil = Image.fromarray(np.clip(255.0 * item.cpu().numpy(), 0, 255).astype(np.uint8)).convert("RGB")
-            image_tensor, mask_tensor = plot_boxes_to_image(
+            image_tensor, mask_tensor, labelme_data = plot_boxes_to_image(
                 image_pil, labelme, show_prompt, event_prompt, prompt_name
             )
             res_images.extend(image_tensor)
             res_masks.extend(mask_tensor)
-            
+            res_labels.append(labelme_data)
+
             if len(res_images) == 0:
                 res_images.extend(item)
             if len(res_masks) == 0:
@@ -684,4 +702,4 @@ class DrawLabelmeJson:
                 empty_mask = torch.from_numpy(mask).permute(2, 0, 1).float() / 255.0
                 res_masks.extend(empty_mask)
 
-        return ( torch.cat(res_images, dim=0),torch.cat(res_masks, dim=0),)
+        return (torch.cat(res_images, dim=0), torch.cat(res_masks, dim=0), res_labels)
