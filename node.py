@@ -579,6 +579,9 @@ def plot_boxes_to_image(image_pil, labelme_json, show_prompt, event_prompt,promp
         # change lable
         if prompt_list is not None and label in prompt_list:
             label = prompt_list[label]
+            
+        if "threshold" in shape:
+            label = label + ":" + shape["threshold"]
 
         # Draw rectangle on the copied image
         cv2.rectangle(image_with_boxes, (int(x1), int(y1)), (int(x2), int(y2)), box_color, 3)
