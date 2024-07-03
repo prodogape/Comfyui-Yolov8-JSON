@@ -1,4 +1,3 @@
-Comfyui-Toolbox
 ultralytics
 numpy
 torch

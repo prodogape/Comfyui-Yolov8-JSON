@@ -1,0 +1,15 @@
+[project]
+name = "comfyui-yolov8-json"
+description = "This node is mainly based on the Yolov8 model for object detection, and it outputs related images, masks, and JSON information."
+version = "1.0.0"
+license = "LICENSE"
+dependencies = ["ultralytics", "numpy", "torch", "PIL"]
+
+[project.urls]
+Repository = "https://github.com/prodogape/Comfyui-Yolov8-JSON"
+#  Used by Comfy Registry https://comfyregistry.org
+
+[tool.comfy]
+PublisherId = "prodogape"
+DisplayName = "Comfyui-Yolov8-JSON"
+Icon = "https://avatars.githubusercontent.com/u/89724016?s=400&u=cd218743591faf329d4b4f07a14de1130a9f56cc&v=4"
