@@ -1,7 +1,7 @@
 [project]
 name = "comfyui-yolov8-json"
 description = "This node is mainly based on the Yolov8 model for object detection, and it outputs related images, masks, and JSON information."
-version = "1.0.0"
+version = "1.1.0"
 license = "LICENSE"
 dependencies = ["ultralytics", "numpy", "torch", "PIL"]
 
