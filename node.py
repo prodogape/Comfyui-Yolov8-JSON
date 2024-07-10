@@ -537,7 +537,7 @@ def parse_json_string(json_string):
         return None
 
 
-def plot_boxes_to_image(image_pil, labelme_json, show_prompt, event_prompt,prompt_name):
+def plot_boxes_to_image(image_pil, labelme_json, show_prompt, event_prompt, prompt_name):
     H = labelme_json["imageHeight"]
     W = labelme_json["imageWidth"]
     shapes = labelme_json["shapes"]
@@ -570,17 +570,16 @@ def plot_boxes_to_image(image_pil, labelme_json, show_prompt, event_prompt,promp
     }
 
     for shape in shapes:
-
         label = shape["label"]
         points = shape["points"]
         [x1, y1], [x2, y2] = points
 
-        # if lable is not in show,do not draw the label
+        # if label is not in show, do not draw the label
         if show_prompt != "all" and show_prompt != "":
-            if checkLabel(label, show_prompt) == False:
+            if not checkLabel(label, show_prompt):
                 continue
 
-        # if lable is event ,color is red ,else color is green
+        # if label is event, color is red, else color is green
         if event_prompt != "all" and event_prompt != "":
             if checkLabel(label, event_prompt):
                 box_color = (255, 0, 0)
@@ -589,7 +588,7 @@ def plot_boxes_to_image(image_pil, labelme_json, show_prompt, event_prompt,promp
                 box_color = (0, 255, 0)
                 text_color = (255, 255, 255)
 
-        # change lable
+        # change label
         if prompt_list is not None and label in prompt_list:
             label = prompt_list[label]
 
@@ -601,8 +600,10 @@ def plot_boxes_to_image(image_pil, labelme_json, show_prompt, event_prompt,promp
         # Draw rectangle on the copied image
         draw.rectangle([(x1, y1), (x2, y2)], outline=box_color, width=3)
 
-        # Draw label on the copied image using PIL
-        text_size = draw.textsize(label, font=font)
+        # Get text size using textbbox
+        text_bbox = draw.textbbox((0, 0), label, font=font)
+        text_size = (text_bbox[2] - text_bbox[0], text_bbox[3] - text_bbox[1])
+
         label_ymin = max(y1, text_size[1] + 10)
         draw.rectangle([(x1, y1 - text_size[1] - 10), (x1 + text_size[0], y1)], fill=box_color)
         draw.text((x1, y1 - text_size[1] - 10), label, font=font, fill=text_color)
