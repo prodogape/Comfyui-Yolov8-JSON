@@ -537,7 +537,9 @@ def parse_json_string(json_string):
         return None
 
 
-def plot_boxes_to_image(image_pil, labelme_json, show_prompt, event_prompt, prompt_name):
+def plot_boxes_to_image(
+    image_pil, labelme_json, show_prompt, event_prompt, prompt_name, show_threshold
+):
     H = labelme_json["imageHeight"]
     W = labelme_json["imageWidth"]
     shapes = labelme_json["shapes"]
@@ -592,7 +594,7 @@ def plot_boxes_to_image(image_pil, labelme_json, show_prompt, event_prompt, prom
         if prompt_list is not None and label in prompt_list:
             label = prompt_list[label]
 
-        if "threshold" in shape:
+        if "threshold" in shape and show_threshold=='yes':
             label = label + ":" + shape["threshold"]
 
         labelme_data["shapes"].append(shape)
@@ -621,12 +623,13 @@ def plot_boxes_to_image(image_pil, labelme_json, show_prompt, event_prompt, prom
 
     # Convert the modified image to a torch tensor
     image_with_boxes = np.array(image_pil)
-    
+
     image_with_boxes_tensor = torch.from_numpy(image_with_boxes.astype(np.float32) / 255.0)
     image_with_boxes_tensor = torch.unsqueeze(image_with_boxes_tensor, 0)
     res_image.append(image_with_boxes_tensor)
 
     return res_image, res_mask, labelme_data
+
 
 class DrawLabelmeJson:
     @classmethod
@@ -650,6 +653,10 @@ class DrawLabelmeJson:
                         "multiline": False,
                     },
                 ),
+                "show_threshold": (
+                    ["yes", "no"],
+                    {"default": "no"},
+                ),
             }
         }
 
@@ -668,6 +675,7 @@ class DrawLabelmeJson:
         show_prompt,
         event_prompt,
         prompt_name,
+        show_threshold,
     ):
 
         res_images = []
@@ -677,7 +685,12 @@ class DrawLabelmeJson:
         for item, labelme in zip(image, labelme_json):
             image_pil = Image.fromarray(np.clip(255.0 * item.cpu().numpy(), 0, 255).astype(np.uint8)).convert("RGB")
             image_tensor, mask_tensor, labelme_data = plot_boxes_to_image(
-                image_pil, labelme, show_prompt, event_prompt, prompt_name
+                image_pil,
+                labelme,
+                show_prompt,
+                event_prompt,
+                prompt_name,
+                show_threshold,
             )
             res_images.extend(image_tensor)
             res_masks.extend(mask_tensor)
